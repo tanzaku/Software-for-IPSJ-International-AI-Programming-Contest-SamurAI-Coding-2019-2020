@@ -23,6 +23,11 @@ Gold::Gold(int x, int y, int a) : Cell(x, y), amount(a) {}
 Gold::Gold(object &o) : Cell(o), amount(o["amount"].get<double>()) {}
 Gold::Gold(const Gold &original) : Cell(original), amount(original.amount) {}
 
+bool is_adj(Cell &a, Cell &b)
+{
+  return std::abs(a.x - b.x) + std::abs(a.y - b.y) == 1;
+}
+
 Field::Field(object &json)
 {
   auto &agts = json["agents"].get<value::array>();
@@ -56,7 +61,7 @@ Field::Field(const Field &fld)
   thinkTime = fld.thinkTime;
 }
 
-Field::Field(const Field &prev, const int plans[],
+Field::Field(const Field &prev, const int oldPlans[], const int plans[],
              int actions[], int scores[])
     : Field(prev)
 {
@@ -67,7 +72,7 @@ Field::Field(const Field &prev, const int plans[],
     int plan = plans[a];
     actions[a] = -1; // Stop on an invalid move
     // Check if the plan is valid
-    if (plan <= -1 || 24 <= plan || (a < 2 && plan % 2 != 0)) {
+    if (plan <= -1 || 24 <= plan || (oldPlans[a] >= 0 && a < 2 && plan % 2 != 0)) {
       // Out of range or diagonal move by a samurai
       continue;
     }
@@ -116,6 +121,19 @@ Field::Field(const Field &prev, const int plans[],
             0 <= actions[b] && actions[b] < 8) {
           conflicts[a] = true;
         }
+      }
+    }
+  }
+  // 交差する時の衝突判定
+  for (int a = 0; a != 4; a++) {
+    int action = actions[a];
+    if (action % 2 == 1) {
+      Cell &target = targets[a];
+      for (int b = 0; b != 4; b++) {
+        if (a == b || actions[b] % 2 != 1) continue;
+        if (!(is_adj(agents[a], agents[b]) && is_adj(target, targets[b]))) continue;
+        if (a < 2 && action < 8 && b >= 2) continue;
+        conflicts[a] = true;
       }
     }
   }

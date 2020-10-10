@@ -220,9 +220,11 @@ vector<StepLog> playGame(const Configuration &initialConf,
         newPlans[p] = -1;
       }
     }
+    int oldPlans[4];
+    copy(plans, plans + 4, oldPlans);
     copy(newPlans, newPlans + 4, plans);
     Configuration *next =
-        new Configuration(*config, plans, actions, scores);
+        new Configuration(*config, oldPlans, plans, actions, scores);
     stepLogs.emplace_back(step, plans, actions, next->agents, timeLeft, scores);
     if (stepSummary) {
       for (int p = 0; p != 4; p++) {

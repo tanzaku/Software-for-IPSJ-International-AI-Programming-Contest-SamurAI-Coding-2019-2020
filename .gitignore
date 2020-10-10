@@ -2,3 +2,10 @@
 svg/
 # Game overview document is not required
 documents/game-overview-jp.html
+
+*.d
+*.o
+manager
+randomPlayer
+simplePlayer
+timeoutPlayer

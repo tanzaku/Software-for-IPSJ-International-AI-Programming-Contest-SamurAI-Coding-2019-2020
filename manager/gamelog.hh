@@ -12,19 +12,18 @@ struct StepLog {
   object json();
 };
 
-struct Configuration: Field {
+struct Configuration : Field {
   int steps;
   Configuration(object &json);
-  Configuration
-  (const Configuration &prev, const int plans[], int actions[], int scores[]);
+  Configuration(const Configuration &prev, const int oldPlans[], const int plans[], int actions[], int scores[]);
   Configuration(const Configuration &cnf);
   object json();
 };
 
-struct GameLog: Configuration {
+struct GameLog : Configuration {
   GameLog(object &json);
-  GameLog(Configuration &cfg, vector <StepLog> &stepLogs);
+  GameLog(Configuration &cfg, vector<StepLog> &stepLogs);
   GameLog(GameLog &gl);
-  vector <StepLog> plays;
+  vector<StepLog> plays;
   object json();
 };

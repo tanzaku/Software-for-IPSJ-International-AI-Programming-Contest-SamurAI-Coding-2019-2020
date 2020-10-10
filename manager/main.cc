@@ -1,33 +1,36 @@
-#include <iostream>
-#include <fstream>
-#include <sstream>
-#include <cstdarg>
-#include <unistd.h>
-#include <signal.h>
 #include "playgame.hh"
+#include <cstdarg>
+#include <fstream>
+#include <iostream>
+#include <signal.h>
+#include <sstream>
+#include <unistd.h>
 
-void openErrorCheck(ifstream &s, const string &fileName, const string &kind) {
+void openErrorCheck(ifstream &s, const string &fileName, const string &kind)
+{
   if (s.fail()) {
     cerr << "Failed to open " << kind << ": " << fileName << endl;
     exit(1);
   }
 }
 
-void readLogData(value &logData, const string &fileName) {
+void readLogData(value &logData, const string &fileName)
+{
   ifstream logInput(fileName);
   openErrorCheck(logInput, fileName, "game log");
   string logDataString((istreambuf_iterator<char>(logInput)),
-  		       istreambuf_iterator<char>());
+                       istreambuf_iterator<char>());
   logInput.close();
   string errors = parse(logData, logDataString);
   if (!errors.empty()) {
     cerr << "Error while parsing game log file: " << fileName << endl
-	 << errors << endl;
+         << errors << endl;
     exit(1);
   }
 }
 
-static void usageMessage(const char *cmd) {
+static void usageMessage(const char *cmd)
+{
   cerr << "Usage: " << cmd
        << " [<option> ...] <field data> [<scripts> ...]\n"
        << "The following options can be specified.\n"
@@ -68,44 +71,47 @@ static void usageMessage(const char *cmd) {
 }
 
 static void usageError(const char *cmd,
-		const char *msg, const char *msg2 = nullptr) {
+                       const char *msg, const char *msg2 = nullptr)
+{
   cerr << msg;
   if (msg2 != nullptr) cerr << " " << msg2;
   cerr << endl;
   usageMessage(cmd);
 }
 
-void verifyPlays(const GameLog &gamelog) {
+void verifyPlays(const GameLog &gamelog)
+{
   int step = 0;
   const Field *currentField = &gamelog;
   cout << "Step " << step++ << endl;
   cout << *currentField;
-  int scores[2] = { 0, 0 };
-  for (auto play: gamelog.plays) {
+  int scores[2] = {0, 0};
+  int oldPlans[4]{-1, -1, -1, -1};
+  for (auto play : gamelog.plays) {
     int actions[4];
     cout << "Play plans: ";
     for (int a = 0; a != 4; a++) {
       cout << " " << play.plans[a];
     }
     cout << endl;
-    currentField = new
-      Field(*currentField, play.plans, actions, scores);
+    currentField = new Field(*currentField, oldPlans, play.plans, actions, scores);
+    copy(play.plans, play.plans + 4, oldPlans);
     cout << "Step " << step++ << endl;
     cout << *currentField;
     for (int a = 0; a != 4; a++) {
       if (play.actions[a] != actions[a]) {
-	cerr << "Action of agent " << a << " differ: "
-	     << "should be " << play.actions[a] << " but is " << actions[a]
-	     << endl;
-	exit(1);
+        cerr << "Action of agent " << a << " differ: "
+             << "should be " << play.actions[a] << " but is " << actions[a]
+             << endl;
+        exit(1);
       }
-    }	  
+    }
     for (int t = 0; t != 2; t++) {
       if (play.scores[t] != scores[t]) {
-	cerr << "Score of " << t << " differ: "
-	     << "should be " <<  play.scores[t] << " but is " << scores[t]
-	     << endl;
-	exit(1);
+        cerr << "Score of " << t << " differ: "
+             << "should be " << play.scores[t] << " but is " << scores[t]
+             << endl;
+        exit(1);
       }
     }
   }
@@ -115,7 +121,8 @@ const char *OPTIONS = "SD:H";
 char *dumpPath = nullptr;
 int playerNumber = 0;
 
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
 #if defined(__unix__) || defined(__linux__) || (defined(__APPLE__) && defined(__MACH__))
   signal(SIGPIPE, SIG_IGN);
 #endif
@@ -123,10 +130,10 @@ int main(int argc, char *argv[]) {
        opt != -1;
        opt = getopt(argc, argv, OPTIONS)) {
     switch (opt) {
-    case 'S':			// Game summary output to stderr
+    case 'S': // Game summary output to stderr
       stepSummary = true;
       break;
-    case 'D':			// Dump communication log
+    case 'D': // Dump communication log
       dumpPath = optarg;
       break;
     case 'H':
@@ -146,13 +153,13 @@ int main(int argc, char *argv[]) {
     usageError(argv[0], "Invalid log data in ", argv[optind]);
   }
   GameLog gamelog(logData.get<object>());
-  if (argc == optind+1) {
+  if (argc == optind + 1) {
     verifyPlays(gamelog);
-  } else if (argc == optind+3 || argc == optind+5) {
+  } else if (argc == optind + 3 || argc == optind + 5) {
     gamelog.plays.clear();
-    char **playerScripts = argv+optind+1;
-    vector <StepLog> playLogs =
-      playGame(gamelog, playerScripts, dumpPath, argc-optind-1);
+    char **playerScripts = argv + optind + 1;
+    vector<StepLog> playLogs =
+        playGame(gamelog, playerScripts, dumpPath, argc - optind - 1);
     GameLog result(gamelog, playLogs);
     cout << value(result.json()) << endl;
   } else {

@@ -1,6 +1,7 @@
 #include "gamelog.hh"
 
-StepLog::StepLog(object &json) {
+StepLog::StepLog(object &json)
+{
   auto plansJson = json["plans"].get<value::array>();
   auto actionsJson = json["actions"].get<value::array>();
   for (int a = 0; a != 4; a++) {
@@ -12,19 +13,21 @@ StepLog::StepLog(object &json) {
   scores[1] = scoresJson[1].get<double>();
 }
 
-StepLog::StepLog
-(int step, int p[], int a[], const Agent agts[], int t[], int s[])
-  :step(step) {
+StepLog::StepLog(int step, int p[], int a[], const Agent agts[], int t[], int s[])
+    : step(step)
+{
   for (int i = 0; i != 4; i++) {
     plans[i] = p[i];
     actions[i] = a[i];
     agents[i] = agts[i];
     timeLeft[i] = t[i];
   }
-  scores[0] = s[0]; scores[1] = s[1];
+  scores[0] = s[0];
+  scores[1] = s[1];
 }
 
-object StepLog::json() {
+object StepLog::json()
+{
   object obj;
   obj.emplace(make_pair("step", value((double)step)));
   value::array plansArray;
@@ -48,45 +51,48 @@ object StepLog::json() {
   return obj;
 }
 
-Configuration::Configuration(object &json): Field(json) {
+Configuration::Configuration(object &json) : Field(json)
+{
   size = json["size"].get<double>();
   steps = json["steps"].get<double>();
 }
 
-Configuration::Configuration
-(const Configuration &prev, const int plans[], int actions[], int scores[]):
-  Field(prev, plans, actions, scores),
-  steps(prev.steps) {};
+Configuration::Configuration(const Configuration &prev, const int oldPlans[], const int plans[], int actions[], int scores[]) : Field(prev, oldPlans, plans, actions, scores),
+                                                                                                                                steps(prev.steps){};
 
-Configuration::Configuration(const Configuration &conf):
-  Field(conf), steps(conf.steps) {};
+Configuration::Configuration(const Configuration &conf) : Field(conf), steps(conf.steps){};
 
-GameLog::GameLog(object &json): Configuration(json["field"].get<object>()) {
+GameLog::GameLog(object &json) : Configuration(json["field"].get<object>())
+{
   auto playsJson = json["plays"].get<value::array>();
-  for (auto step: playsJson) {
+  for (auto step : playsJson) {
     plays.emplace_back(StepLog(step.get<object>()));
   }
 }
 
-GameLog::GameLog(Configuration &cnf, vector <StepLog> &stepLogs):
-  Configuration(cnf) {
-  for (StepLog &sl: stepLogs) plays.push_back(sl);
+GameLog::GameLog(Configuration &cnf, vector<StepLog> &stepLogs) : Configuration(cnf)
+{
+  for (StepLog &sl : stepLogs)
+    plays.push_back(sl);
 }
 
-object Configuration::json() {
+object Configuration::json()
+{
   object obj = Field::json();
   obj.emplace(make_pair("thinkTime", value(double(thinkTime))));
   obj.emplace(make_pair("steps", value(double(steps))));
   return obj;
 }
 
-object GameLog::json() {
+object GameLog::json()
+{
   object field = Configuration::json();
   object obj;
   obj.emplace(make_pair("filetype", value("SamurAI Dig Here Game Log")));
   obj.emplace(make_pair("field", field));
   value::array playsArray;
-  for (StepLog play: plays) playsArray.push_back(value(play.json()));
+  for (StepLog play : plays)
+    playsArray.push_back(value(play.json()));
   obj.emplace(make_pair("plays", playsArray));
   return obj;
 }
